@@ -31,6 +31,12 @@ jobs:
           path: ~/go/bin
           key: ${{ runner.os }}-go-tools-${{ hashFiles('Makefile') }}
 
+      - name: Build Swift helpers
+        run: |
+          cd swift-helpers
+          swift build
+          echo "$(pwd)/.build/debug" >> $GITHUB_PATH
+
       - name: Install tooling
         if: steps.go-tools-cache.outputs.cache-hit != 'true'
         run: make tools
