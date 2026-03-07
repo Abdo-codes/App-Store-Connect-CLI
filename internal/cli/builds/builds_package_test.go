@@ -252,6 +252,13 @@ func TestValidateWithGo_SupportsAppBundlesAndIPAFiles(t *testing.T) {
 	if valid, ok := appResult["valid"].(bool); !ok || !valid {
 		t.Fatalf("Expected app bundle to be valid, got %#v", appResult["valid"])
 	}
+	appSize, err := calculateAppSize(context.Background(), appDir)
+	if err != nil {
+		t.Fatalf("calculateAppSize failed for app bundle: %v", err)
+	}
+	if size, ok := appResult["size"].(int64); !ok || size != appSize {
+		t.Fatalf("Expected app bundle size %d, got %#v", appSize, appResult["size"])
+	}
 
 	ipaResult, err := validateWithGo(context.Background(), ipaPath, true)
 	if err != nil {

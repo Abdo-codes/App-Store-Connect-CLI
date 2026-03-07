@@ -416,6 +416,14 @@ func validateWithGo(ctx context.Context, path string, strict bool) (map[string]i
 		return nil, err
 	}
 
+	reportedSize := info.Size()
+	if info.IsDir() {
+		reportedSize, err = calculateAppSize(requestCtx, path)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	ext := strings.ToLower(filepath.Ext(path))
 	var validationErr error
 	switch {
@@ -430,7 +438,7 @@ func validateWithGo(ctx context.Context, path string, strict bool) (map[string]i
 	result := map[string]interface{}{
 		"valid":  validationErr == nil,
 		"path":   path,
-		"size":   info.Size(),
+		"size":   reportedSize,
 		"strict": strict,
 		"method": "go",
 	}
