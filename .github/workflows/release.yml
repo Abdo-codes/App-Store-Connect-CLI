@@ -49,7 +49,11 @@ jobs:
         run: |
           swift build -c release
           mkdir -p ../release/swift-helpers
-          cp .build/release/asc-* ../release/swift-helpers/
+          for binary in .build/release/asc-*; do
+            if [ -f "$binary" ]; then
+              cp "$binary" ../release/swift-helpers/
+            fi
+          done
 
       - name: Build for macOS
         run: |
