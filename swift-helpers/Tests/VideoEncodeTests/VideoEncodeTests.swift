@@ -24,4 +24,10 @@ final class VideoEncodeTests: XCTestCase {
         XCTAssertEqual(rendered.width, 1280)
         XCTAssertEqual(rendered.height, 720)
     }
+
+    func testCompressionRatioMatchesGoStyleSemantics() {
+        XCTAssertEqual(compressionRatio(originalFileSize: 200, outputFileSize: 100), 2.0)
+        XCTAssertEqual(compressionRatio(originalFileSize: 100, outputFileSize: 200), 1.0)
+        XCTAssertEqual(compressionRatio(originalFileSize: 100, outputFileSize: 0), 1.0)
+    }
 }

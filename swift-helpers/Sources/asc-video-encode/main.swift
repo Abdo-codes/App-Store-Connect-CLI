@@ -74,6 +74,15 @@ func renderSize(for originalSize: CGSize, maxResolution: CGSize?) -> CGSize {
     )
 }
 
+func compressionRatio(originalFileSize: Int64, outputFileSize: Int64) -> Double {
+    guard outputFileSize > 0 else {
+        return 1.0
+    }
+    
+    let ratio = Double(originalFileSize) / Double(outputFileSize)
+    return ratio < 1 ? 1.0 : ratio
+}
+
 // MARK: - Video Processing
 
 func encodeVideo(
@@ -168,7 +177,7 @@ func encodeVideo(
         "original_bitrate": originalBitrate,
         "original_file_size": originalFileSize,
         "output_file_size": outputFileSize,
-        "compression_ratio": originalFileSize > 0 ? Double(outputFileSize) / Double(originalFileSize) : 1.0
+        "compression_ratio": compressionRatio(originalFileSize: originalFileSize, outputFileSize: outputFileSize)
     ]
 }
 

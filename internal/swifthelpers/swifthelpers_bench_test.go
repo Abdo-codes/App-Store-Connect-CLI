@@ -29,7 +29,7 @@ func BenchmarkJWTSigning(b *testing.B) {
 	}
 
 	// Check if Swift helper is available
-	_, swiftAvailable := findHelper(JWTSignerBinary)
+	_, swiftErr := findHelper(JWTSignerBinary)
 
 	// Generate test key pair
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -61,7 +61,7 @@ func BenchmarkJWTSigning(b *testing.B) {
 	})
 
 	// Benchmark Swift implementation (subprocess + CryptoKit)
-	if swiftAvailable == nil {
+	if swiftErr == nil {
 		b.Run("Swift_CryptoKit_subprocess", func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
@@ -88,7 +88,7 @@ func BenchmarkScreenshotFraming(b *testing.B) {
 		b.Skip("Swift helpers only available on macOS")
 	}
 
-	_, swiftAvailable := findHelper(ScreenshotFrameBinary)
+	_, swiftErr := findHelper(ScreenshotFrameBinary)
 
 	tempDir := b.TempDir()
 
@@ -115,7 +115,7 @@ func BenchmarkScreenshotFraming(b *testing.B) {
 		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 
 		// Benchmark Swift CoreImage/Metal framing
-		if swiftAvailable == nil {
+		if swiftErr == nil {
 			b.Run(fmt.Sprintf("Swift_CoreImage_%s", size.name), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
@@ -156,7 +156,7 @@ func BenchmarkImageOptimization(b *testing.B) {
 		b.Skip("Swift helpers only available on macOS")
 	}
 
-	_, swiftAvailable := findHelper(ImageOptimizeBinary)
+	_, swiftErr := findHelper(ImageOptimizeBinary)
 
 	tempDir := b.TempDir()
 	sizes := []struct {
@@ -180,7 +180,7 @@ func BenchmarkImageOptimization(b *testing.B) {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 
 		// Benchmark each preset with Swift
-		if swiftAvailable == nil {
+		if swiftErr == nil {
 			for _, preset := range []string{"store", "preview", "thumbnail"} {
 				presetOutput := filepath.Join(tempDir, fmt.Sprintf("%s-%s.png", size.name, preset))
 				b.Run(fmt.Sprintf("Swift_Metal_%s_%s", size.name, preset), func(b *testing.B) {
