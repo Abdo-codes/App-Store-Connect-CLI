@@ -116,7 +116,7 @@ asc-video-encode encode \
 asc-video-encode info video.mov
 ```
 
-Presets: `store` (6Mbps), `preview` (4Mbps), `compact` (2Mbps)
+Presets: `store` (full-resolution export), `preview` (1080p export), `compact` (720p export)
 
 ## Go Integration
 
