@@ -662,6 +662,72 @@ func TestCreateIPAFromPayload_PreservesSymlinkEntries(t *testing.T) {
 	}
 }
 
+func TestCreateIPAFromPayload_PreservesSymlinkedDirectoryEntry(t *testing.T) {
+	tempDir := t.TempDir()
+	payloadDir := filepath.Join(tempDir, "Payload")
+	appDir := filepath.Join(payloadDir, "TestApp.app")
+	versionsDir := filepath.Join(appDir, "Frameworks", "Demo.framework", "Versions")
+	targetDir := filepath.Join(versionsDir, "A")
+
+	if err := os.MkdirAll(targetDir, 0o755); err != nil {
+		t.Fatalf("Failed to create target dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(targetDir, "Demo"), []byte("framework-binary"), 0o755); err != nil {
+		t.Fatalf("Failed to create framework binary: %v", err)
+	}
+
+	linkPath := filepath.Join(versionsDir, "Current")
+	if err := os.Symlink("A", linkPath); err != nil {
+		t.Skipf("symlink not supported: %v", err)
+	}
+
+	outputPath := filepath.Join(tempDir, "output.ipa")
+	if err := createIPAFromPayload(context.Background(), payloadDir, outputPath, 6); err != nil {
+		t.Fatalf("createIPAFromPayload failed: %v", err)
+	}
+
+	reader, err := zip.OpenReader(outputPath)
+	if err != nil {
+		t.Fatalf("Failed to open IPA: %v", err)
+	}
+	defer reader.Close()
+
+	var currentEntry *zip.File
+	var targetEntry *zip.File
+	for _, file := range reader.File {
+		switch file.Name {
+		case "Payload/TestApp.app/Frameworks/Demo.framework/Versions/Current":
+			currentEntry = file
+		case "Payload/TestApp.app/Frameworks/Demo.framework/Versions/A/Demo":
+			targetEntry = file
+		}
+	}
+
+	if currentEntry == nil {
+		t.Fatal("Expected symlinked directory entry in IPA")
+	}
+	if currentEntry.FileInfo().Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("Expected Versions/Current entry to remain a symlink, mode=%v", currentEntry.FileInfo().Mode())
+	}
+	rc, err := currentEntry.Open()
+	if err != nil {
+		t.Fatalf("Open symlinked directory entry: %v", err)
+	}
+	defer rc.Close()
+
+	target, err := io.ReadAll(rc)
+	if err != nil {
+		t.Fatalf("Read symlinked directory entry: %v", err)
+	}
+	if string(target) != "A" {
+		t.Fatalf("Expected symlinked directory target %q, got %q", "A", string(target))
+	}
+
+	if targetEntry == nil {
+		t.Fatal("Expected target directory contents to be archived at their real path")
+	}
+}
+
 func TestCreateIPAFromPayload_RejectsSymlinkOutputPath(t *testing.T) {
 	tempDir := t.TempDir()
 	payloadDir := filepath.Join(tempDir, "Payload")
