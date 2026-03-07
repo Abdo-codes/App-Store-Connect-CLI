@@ -2,8 +2,10 @@ package builds
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -114,17 +116,19 @@ func TestPackageWithGo_DifferentCompressionLevels(t *testing.T) {
 		t.Fatalf("Failed to create app dir: %v", err)
 	}
 
-	// Create compressible content (repeated pattern)
-	content := make([]byte, 10000)
-	for i := range content {
-		content[i] = 'A'
+	// Create content that produces measurably different deflate sizes.
+	var content bytes.Buffer
+	for i := 0; i < 10000; i++ {
+		content.WriteString(fmt.Sprintf("BLOCK-%02d-", i%10))
+		content.Write(bytes.Repeat([]byte{'A'}, i%100))
+		content.Write(bytes.Repeat([]byte{'Z'}, 50-(i%50)))
 	}
-	if err := os.WriteFile(filepath.Join(appDir, "data.bin"), content, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(appDir, "data.bin"), content.Bytes(), 0o644); err != nil {
 		t.Fatalf("Failed to create data file: %v", err)
 	}
 
 	// Test different compression levels
-	levels := []int{0, 3, 6, 9}
+	levels := []int{1, 3, 6, 9}
 	var sizes []int64
 
 	for _, level := range levels {
@@ -140,10 +144,100 @@ func TestPackageWithGo_DifferentCompressionLevels(t *testing.T) {
 		t.Logf("Level %d: %d bytes", level, result.CompressedSize)
 	}
 
-	// Higher compression should generally result in smaller files
-	// (though this isn't guaranteed for all content)
 	if sizes[0] <= sizes[3] {
-		t.Logf("Warning: Level 0 (%d bytes) not larger than Level 9 (%d bytes)", sizes[0], sizes[3])
+		t.Fatalf("Expected level 1 IPA (%d bytes) to be larger than level 9 IPA (%d bytes)", sizes[0], sizes[3])
+	}
+}
+
+func TestCreateIPAFromPayload_Level0ProducesReadableArchive(t *testing.T) {
+	tempDir := t.TempDir()
+	payloadDir := filepath.Join(tempDir, "Payload")
+	appDir := filepath.Join(payloadDir, "TestApp.app")
+
+	if err := os.MkdirAll(appDir, 0o755); err != nil {
+		t.Fatalf("Failed to create app dir: %v", err)
+	}
+
+	content := []byte("plain binary content")
+	if err := os.WriteFile(filepath.Join(appDir, "TestApp"), content, 0o755); err != nil {
+		t.Fatalf("Failed to create binary: %v", err)
+	}
+
+	outputPath := filepath.Join(tempDir, "output-store.ipa")
+	if err := createIPAFromPayload(payloadDir, outputPath, 0); err != nil {
+		t.Fatalf("createIPAFromPayload failed: %v", err)
+	}
+
+	reader, err := zip.OpenReader(outputPath)
+	if err != nil {
+		t.Fatalf("Failed to open IPA: %v", err)
+	}
+	defer reader.Close()
+
+	if len(reader.File) != 1 {
+		t.Fatalf("Expected exactly one file in IPA, got %d", len(reader.File))
+	}
+
+	if reader.File[0].Method != zip.Store {
+		t.Fatalf("Expected level 0 to store files, got method %d", reader.File[0].Method)
+	}
+
+	rc, err := reader.File[0].Open()
+	if err != nil {
+		t.Fatalf("Failed to open archived file: %v", err)
+	}
+	defer rc.Close()
+
+	got, err := io.ReadAll(rc)
+	if err != nil {
+		t.Fatalf("Failed to read archived file: %v", err)
+	}
+	if !bytes.Equal(got, content) {
+		t.Fatalf("Archived content mismatch: got %q want %q", got, content)
+	}
+}
+
+func TestValidateWithGo_SupportsAppBundlesAndIPAFiles(t *testing.T) {
+	tempDir := t.TempDir()
+	appDir := filepath.Join(tempDir, "TestApp.app")
+	ipaPath := filepath.Join(tempDir, "TestApp.ipa")
+	otherPath := filepath.Join(tempDir, "TestApp.txt")
+
+	if err := os.MkdirAll(appDir, 0o755); err != nil {
+		t.Fatalf("Failed to create app bundle: %v", err)
+	}
+	if err := os.WriteFile(ipaPath, []byte("ipa content"), 0o644); err != nil {
+		t.Fatalf("Failed to create IPA file: %v", err)
+	}
+	if err := os.WriteFile(otherPath, []byte("text content"), 0o644); err != nil {
+		t.Fatalf("Failed to create text file: %v", err)
+	}
+
+	appResult, err := validateWithGo(context.Background(), appDir, false)
+	if err != nil {
+		t.Fatalf("validateWithGo failed for app bundle: %v", err)
+	}
+	if valid, ok := appResult["valid"].(bool); !ok || !valid {
+		t.Fatalf("Expected app bundle to be valid, got %#v", appResult["valid"])
+	}
+
+	ipaResult, err := validateWithGo(context.Background(), ipaPath, true)
+	if err != nil {
+		t.Fatalf("validateWithGo failed for IPA file: %v", err)
+	}
+	if valid, ok := ipaResult["valid"].(bool); !ok || !valid {
+		t.Fatalf("Expected IPA file to be valid, got %#v", ipaResult["valid"])
+	}
+	if strict, ok := ipaResult["strict"].(bool); !ok || !strict {
+		t.Fatalf("Expected strict=true in validation result, got %#v", ipaResult["strict"])
+	}
+
+	otherResult, err := validateWithGo(context.Background(), otherPath, false)
+	if err != nil {
+		t.Fatalf("validateWithGo failed for non-bundle file: %v", err)
+	}
+	if valid, ok := otherResult["valid"].(bool); !ok || valid {
+		t.Fatalf("Expected non-bundle file to be invalid, got %#v", otherResult["valid"])
 	}
 }
 

@@ -236,7 +236,7 @@ struct FrameCommand: ParsableCommand {
     var input: String
     
     @Option(name: .long, help: "Output path")
-    var output: String
+    var output: String?
     
     @Option(name: .long, help: "Device type (\(DeviceType.allCases.map { $0.rawValue }.joined(separator: ", ")))")
     var device: String
@@ -247,8 +247,14 @@ struct FrameCommand: ParsableCommand {
     @Option(name: .long, help: "Padding around screenshot")
     var padding: Double = 40
     
-    @Flag(name: .long, help: "Validate dimensions without processing")
-    var validate: Bool = false
+    @Flag(name: .customLong("validate"), help: "Validate dimensions without processing")
+    var validationOnly: Bool = false
+
+    func validate() throws {
+        if !validationOnly && (output?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) {
+            throw ValidationError("--output is required unless --validate is set")
+        }
+    }
     
     func run() throws {
         // Parse device type
@@ -262,7 +268,7 @@ struct FrameCommand: ParsableCommand {
             bgColor = parseColor(hex: bgHex)
         }
         
-        if validate {
+        if validationOnly {
             let image = try loadImage(from: input)
             let isValid = validateScreenshotDimensions(image, for: deviceType)
             let dict: [String: Any] = [
@@ -277,6 +283,9 @@ struct FrameCommand: ParsableCommand {
         }
         
         // Process the screenshot
+        guard let output else {
+            throw ScreenshotFrameError.invalidInput("Missing output path")
+        }
         try createFramedScreenshot(
             screenshotPath: input,
             deviceType: deviceType,

@@ -184,6 +184,7 @@ func optimizeImage(
     
     // Write output
     let outputURL = URL(fileURLWithPath: outputPath)
+    try FileManager.default.createDirectory(at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
     try data.write(to: outputURL)
     
     // Get original file size
@@ -211,6 +212,23 @@ func optimizeImage(
 
 // MARK: - Parallel Batch Processing
 
+func batchOutputPath(for file: URL, inputRoot: URL, outputRoot: URL, recursive: Bool) throws -> String {
+    if !recursive {
+        return outputRoot.appendingPathComponent(file.lastPathComponent).path
+    }
+
+    let inputPath = inputRoot.standardizedFileURL.path
+    let filePath = file.standardizedFileURL.path
+    let prefix = inputPath.hasSuffix("/") ? inputPath : inputPath + "/"
+
+    guard filePath.hasPrefix(prefix) else {
+        throw ImageOptimizeError.invalidInput("File is outside input directory: \(file.path)")
+    }
+
+    let relativePath = String(filePath.dropFirst(prefix.count))
+    return outputRoot.appendingPathComponent(relativePath).path
+}
+
 func batchOptimize(
     inputDir: String,
     outputDir: String,
@@ -220,6 +238,7 @@ func batchOptimize(
     parallel: Bool = true
 ) throws -> [[String: Any]] {
     let fm = FileManager.default
+    let outputRoot = URL(fileURLWithPath: outputDir, isDirectory: true)
     
     // Ensure output directory exists
     try fm.createDirectory(atPath: outputDir, withIntermediateDirectories: true)
@@ -247,17 +266,20 @@ func batchOptimize(
     
     if parallel && imageFiles.count > 1 {
         // Parallel processing with concurrentPerform for multi-core speedup
-        let concurrentQueue = DispatchQueue(label: "asc.batchoptimize", attributes: .concurrent)
-        let group = DispatchGroup()
         var threadSafeResults: [[String: Any]] = []
         let resultsLock = NSLock()
         
         // Use concurrentPerform for optimal thread management on Apple Silicon
         DispatchQueue.concurrentPerform(iterations: imageFiles.count) { index in
             let file = imageFiles[index]
-            let outputPath = (outputDir as NSString).appendingPathComponent(file.lastPathComponent)
             
             do {
+                let outputPath = try batchOutputPath(
+                    for: file,
+                    inputRoot: inputURL,
+                    outputRoot: outputRoot,
+                    recursive: recursive
+                )
                 let result = try optimizeImage(
                     inputPath: file.path,
                     outputPath: outputPath,
@@ -282,9 +304,13 @@ func batchOptimize(
     } else {
         // Sequential processing for single file or when parallel disabled
         for file in imageFiles {
-            let outputPath = (outputDir as NSString).appendingPathComponent(file.lastPathComponent)
-            
             do {
+                let outputPath = try batchOutputPath(
+                    for: file,
+                    inputRoot: inputURL,
+                    outputRoot: outputRoot,
+                    recursive: recursive
+                )
                 let result = try optimizeImage(
                     inputPath: file.path,
                     outputPath: outputPath,

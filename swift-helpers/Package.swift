@@ -74,6 +74,11 @@ let package = Package(
             name: "ScreenshotFrameTests",
             dependencies: ["asc-screenshot-frame"],
             path: "Tests/ScreenshotFrameTests"
+        ),
+        .testTarget(
+            name: "ImageOptimizeTests",
+            dependencies: ["asc-image-optimize"],
+            path: "Tests/ImageOptimizeTests"
         )
     ]
 )

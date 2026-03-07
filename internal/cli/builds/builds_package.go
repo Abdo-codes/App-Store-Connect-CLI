@@ -2,6 +2,7 @@ package builds
 
 import (
 	"archive/zip"
+	"compress/flate"
 	"context"
 	"flag"
 	"fmt"
@@ -243,9 +244,9 @@ func createIPAFromPayload(payloadDir, outputPath string, level int) error {
 
 	// Set compression level on the writer (0 = store, 9 = best compression)
 	zipWriter := zip.NewWriter(file)
-	if level == 0 {
+	if level > 0 {
 		zipWriter.RegisterCompressor(zip.Deflate, func(out io.Writer) (io.WriteCloser, error) {
-			return &nopCloser{out}, nil
+			return flate.NewWriter(out, level)
 		})
 	}
 	defer zipWriter.Close()
@@ -270,7 +271,11 @@ func createIPAFromPayload(payloadDir, outputPath string, level int) error {
 			return err
 		}
 		header.Name = filepath.ToSlash(relPath)
-		header.Method = zip.Deflate
+		if level == 0 {
+			header.Method = zip.Store
+		} else {
+			header.Method = zip.Deflate
+		}
 		header.Modified = info.ModTime()
 
 		writer, err := zipWriter.CreateHeader(header)
@@ -361,8 +366,11 @@ func validateWithGo(ctx context.Context, path string, strict bool) (map[string]i
 		return nil, err
 	}
 
+	ext := strings.ToLower(filepath.Ext(path))
+	validTarget := (info.IsDir() && ext == ".app") || (!info.IsDir() && ext == ".ipa")
+
 	result := map[string]interface{}{
-		"valid":  info.IsDir(),
+		"valid":  validTarget,
 		"path":   path,
 		"size":   info.Size(),
 		"strict": strict,
@@ -371,10 +379,3 @@ func validateWithGo(ctx context.Context, path string, strict bool) (map[string]i
 
 	return result, nil
 }
-
-// nopCloser wraps an io.Writer to provide a no-op Close method
-type nopCloser struct {
-	io.Writer
-}
-
-func (nopCloser) Close() error { return nil }

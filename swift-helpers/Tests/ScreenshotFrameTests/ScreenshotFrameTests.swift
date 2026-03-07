@@ -56,4 +56,21 @@ final class ScreenshotFrameTests: XCTestCase {
             }
         }
     }
+
+    func testFrameCommandValidateAllowsMissingOutput() {
+        XCTAssertNoThrow(try FrameCommand.parse([
+            "--input", "screenshot.png",
+            "--device", DeviceType.iPhone16Pro.rawValue,
+            "--validate"
+        ]))
+    }
+
+    func testFrameCommandRequiresOutputWhenNotValidating() {
+        XCTAssertThrowsError(try FrameCommand.parse([
+            "--input", "screenshot.png",
+            "--device", DeviceType.iPhone16Pro.rawValue
+        ])) { error in
+            XCTAssertTrue(String(describing: error).contains("--output"))
+        }
+    }
 }

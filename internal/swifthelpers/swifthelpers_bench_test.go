@@ -336,10 +336,3 @@ func createTestVideo(path string, durationSecs int) error {
 	cmd.Stderr = nil
 	return cmd.Run()
 }
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
