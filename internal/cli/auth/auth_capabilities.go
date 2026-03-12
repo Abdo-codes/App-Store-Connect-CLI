@@ -128,6 +128,7 @@ func collectAuthCapabilities(ctx context.Context, appID, vendorNumber string) (*
 
 	checks := []authCapabilityCheck{
 		authAppsCapabilityCheck(ctx, client),
+		authBuildsCapabilityCheck(ctx, client, appID),
 	}
 	summary := summarizeAuthCapabilities(checks)
 
@@ -234,6 +235,25 @@ func authAppsCapabilityCheck(parent context.Context, client authCapabilitiesClie
 	)
 }
 
+func authBuildsCapabilityCheck(parent context.Context, client authCapabilitiesClient, appID string) authCapabilityCheck {
+	if strings.TrimSpace(appID) == "" {
+		return authSkippedCapabilityCheck("builds", "app", "provide --app or ASC_APP_ID to probe builds access")
+	}
+
+	requestCtx, cancel := shared.ContextWithTimeout(parent)
+	defer cancel()
+
+	_, err := client.GetBuilds(requestCtx, appID, asc.WithBuildsLimit(1))
+	return authCapabilityCheckFromError(
+		"builds",
+		"app",
+		err,
+		fmt.Sprintf("can list builds for app %s", appID),
+		fmt.Sprintf("credentials are valid but build access is unavailable for app %s", appID),
+		fmt.Sprintf("builds probe failed for app %s", appID),
+	)
+}
+
 func authCapabilityCheckFromError(name, scope string, err error, successMessage, unavailableMessage, inconclusivePrefix string) authCapabilityCheck {
 	switch {
 	case err == nil:
@@ -264,6 +284,15 @@ func authCapabilityCheckFromError(name, scope string, err error, successMessage,
 			Status:  "inconclusive",
 			Message: fmt.Sprintf("%s: %v", inconclusivePrefix, err),
 		}
+	}
+}
+
+func authSkippedCapabilityCheck(name, scope, message string) authCapabilityCheck {
+	return authCapabilityCheck{
+		Name:    name,
+		Scope:   scope,
+		Status:  "skipped",
+		Message: message,
 	}
 }
 
