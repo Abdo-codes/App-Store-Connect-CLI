@@ -412,15 +412,16 @@ func authFinanceCapabilityCheck(parent context.Context, client authCapabilitiesC
 		)
 	}
 
-	return authSkippedCapabilityCheck(
-		"finance",
-		"vendor",
-		fmt.Sprintf(
-			"could not verify finance access for vendor %s because no recent finance reports were available for %s; finance reports use Apple fiscal months",
+	return authCapabilityCheck{
+		Name:   "finance",
+		Scope:  "vendor",
+		Status: "inconclusive",
+		Message: fmt.Sprintf(
+			"could not verify finance access for vendor %s because recent finance report probes for %s returned not found; finance reports use Apple fiscal months",
 			vendorNumber,
 			strings.Join(unavailableDates, ", "),
 		),
-	)
+	}
 }
 
 func authCapabilityCheckFromError(name, scope string, err error, successMessage, unavailableMessage, inconclusivePrefix string) authCapabilityCheck {

@@ -364,7 +364,7 @@ func TestAuthFinanceCapabilityCheck_TriesRecentMonthsBeforeGivingUp(t *testing.T
 	}
 }
 
-func TestAuthFinanceCapabilityCheck_SkipsWhenRecentReportsUnavailable(t *testing.T) {
+func TestAuthFinanceCapabilityCheck_KeepsRecentNotFoundsInconclusive(t *testing.T) {
 	prevNow := authCapabilitiesNow
 	authCapabilitiesNow = func() time.Time { return time.Date(2026, time.March, 31, 0, 0, 0, 0, time.UTC) }
 	t.Cleanup(func() {
@@ -380,11 +380,14 @@ func TestAuthFinanceCapabilityCheck_SkipsWhenRecentReportsUnavailable(t *testing
 	}
 
 	check := authFinanceCapabilityCheck(context.Background(), stub, "98765432")
-	if check.Status != "skipped" {
-		t.Fatalf("status = %q, want skipped (%+v)", check.Status, check)
+	if check.Status != "inconclusive" {
+		t.Fatalf("status = %q, want inconclusive (%+v)", check.Status, check)
 	}
 	if !strings.Contains(check.Message, "Apple fiscal months") {
 		t.Fatalf("message = %q, want Apple fiscal months guidance", check.Message)
+	}
+	if !strings.Contains(check.Message, "returned not found") {
+		t.Fatalf("message = %q, want not found guidance", check.Message)
 	}
 	if got, want := stub.financeReportDates, []string{"2026-02", "2026-01", "2025-12"}; len(got) != len(want) || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] {
 		t.Fatalf("finance report dates = %v, want %v", got, want)
