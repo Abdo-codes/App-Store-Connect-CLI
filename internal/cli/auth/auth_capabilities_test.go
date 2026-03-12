@@ -50,6 +50,20 @@ func TestAuthCapabilitiesCommandFlagValidation(t *testing.T) {
 	})
 }
 
+func TestAuthCommandIncludesCapabilitiesSubcommand(t *testing.T) {
+	cmd := AuthCommand()
+	found := false
+	for _, sub := range cmd.Subcommands {
+		if sub != nil && sub.Name == "capabilities" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("expected auth command to include capabilities subcommand")
+	}
+}
+
 func TestDefaultAuthCapabilitiesOutputFormat(t *testing.T) {
 	t.Run("json", func(t *testing.T) {
 		t.Setenv("ASC_DEFAULT_OUTPUT", "json")
@@ -138,6 +152,25 @@ func TestAuthCapabilitiesCommandJSONOutput(t *testing.T) {
 	}
 	if payload.Summary.Health != "green" || len(payload.Capabilities) != 1 {
 		t.Fatalf("unexpected payload: %+v", payload)
+	}
+}
+
+func TestRenderAuthCapabilitiesMarkdown(t *testing.T) {
+	stdout, _ := captureAuthOutput(t, func() {
+		renderAuthCapabilities(&authCapabilitiesResponse{
+			Summary: authCapabilitiesSummary{
+				Health:         "green",
+				NextAction:     "No action needed.",
+				AvailableCount: 1,
+			},
+			Capabilities: []authCapabilityCheck{
+				{Name: "apps", Scope: "account", Status: "available", Message: "can list apps"},
+			},
+			GeneratedAt: "2026-03-12T00:00:00Z",
+		}, true)
+	})
+	if !strings.Contains(stdout, "### Summary") || !strings.Contains(stdout, "### Capabilities") {
+		t.Fatalf("expected markdown sections, got %q", stdout)
 	}
 }
 
