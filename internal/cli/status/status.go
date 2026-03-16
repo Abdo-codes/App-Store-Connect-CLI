@@ -227,6 +227,9 @@ func watchDashboard(ctx context.Context, client *asc.Client, appID string, inclu
 		resp, err := collectDashboard(requestCtx, client, appID, includes)
 		cancel()
 		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				return nil
+			}
 			return fmt.Errorf("status: %w", err)
 		}
 

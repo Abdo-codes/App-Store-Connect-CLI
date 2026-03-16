@@ -168,7 +168,7 @@ Examples:
 
 			var report validation.Report
 			if snapshot.Version != nil {
-				report, err = reviewReadinessReportBuilder(ctx, validatecli.ReadinessOptions{
+				report, err = reviewReadinessReportBuilder(requestCtx, validatecli.ReadinessOptions{
 					AppID:     resolvedAppID,
 					VersionID: snapshot.Version.ID,
 					Platform:  snapshot.Version.Platform,
@@ -242,12 +242,19 @@ func buildReviewSnapshot(ctx context.Context, client *asc.Client, appID, version
 	} else if strings.TrimSpace(platform) != "" {
 		submissionOpts = append(submissionOpts, asc.WithReviewSubmissionsPlatforms([]string{platform}))
 	}
+	if versionContext != nil && strings.TrimSpace(versionContext.ID) != "" {
+		submissionOpts = append(submissionOpts, asc.WithReviewSubmissionsInclude([]string{"appStoreVersionForReview"}))
+	}
 
 	reviewSubmissions, err := client.GetReviewSubmissions(ctx, appID, submissionOpts...)
 	if err != nil {
 		return snapshot, fmt.Errorf("fetch review submissions: %w", err)
 	}
-	snapshot.LatestSubmission = selectRelevantReviewSubmission(reviewSubmissions.Data)
+	selectedVersionID := ""
+	if versionContext != nil {
+		selectedVersionID = strings.TrimSpace(versionContext.ID)
+	}
+	snapshot.LatestSubmission = selectRelevantReviewSubmission(reviewSubmissions.Data, selectedVersionID)
 
 	return snapshot, nil
 }
@@ -319,13 +326,22 @@ func mapReviewVersion(item asc.Resource[asc.AppStoreVersionAttributes]) reviewVe
 	}
 }
 
-func selectRelevantReviewSubmission(submissions []asc.ReviewSubmissionResource) *reviewSubmissionContext {
-	if len(submissions) == 0 {
+func selectRelevantReviewSubmission(submissions []asc.ReviewSubmissionResource, versionID string) *reviewSubmissionContext {
+	filtered := submissions
+	if normalizedVersionID := strings.TrimSpace(versionID); normalizedVersionID != "" {
+		filtered = make([]asc.ReviewSubmissionResource, 0, len(submissions))
+		for _, submission := range submissions {
+			if strings.EqualFold(reviewSubmissionVersionID(submission), normalizedVersionID) {
+				filtered = append(filtered, submission)
+			}
+		}
+	}
+	if len(filtered) == 0 {
 		return nil
 	}
 
-	best := submissions[0]
-	for _, current := range submissions[1:] {
+	best := filtered[0]
+	for _, current := range filtered[1:] {
 		bestPriority := reviewSubmissionPriority(best.Attributes.SubmissionState)
 		currentPriority := reviewSubmissionPriority(current.Attributes.SubmissionState)
 		if currentPriority > bestPriority {
@@ -349,6 +365,13 @@ func selectRelevantReviewSubmission(submissions []asc.ReviewSubmissionResource) 
 		SubmittedDate: strings.TrimSpace(best.Attributes.SubmittedDate),
 	}
 	return &context
+}
+
+func reviewSubmissionVersionID(submission asc.ReviewSubmissionResource) string {
+	if submission.Relationships == nil || submission.Relationships.AppStoreVersionForReview == nil {
+		return ""
+	}
+	return strings.TrimSpace(submission.Relationships.AppStoreVersionForReview.Data.ID)
 }
 
 func reviewSubmissionPriority(state asc.ReviewSubmissionState) int {

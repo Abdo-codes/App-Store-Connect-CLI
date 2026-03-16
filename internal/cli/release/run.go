@@ -440,13 +440,16 @@ func executeRun(ctx context.Context, opts runOptions) (runResult, error) {
 	}
 
 	if err := runStep(stepAttachBuild, "Ensure --build points to a valid processed build for this app.", func() (stepOutcome, error) {
-		if strings.TrimSpace(versionID) == "" && opts.DryRun {
-			return stepOutcome{
-				Status:  "dry-run",
-				Message: "build attach deferred until version exists",
-				Details: map[string]any{"deferred": true},
-				Persist: false,
-			}, nil
+		if strings.TrimSpace(versionID) == "" {
+			if opts.DryRun {
+				return stepOutcome{
+					Status:  "dry-run",
+					Message: "build attach deferred until version exists",
+					Details: map[string]any{"deferred": true},
+					Persist: false,
+				}, nil
+			}
+			return stepOutcome{}, fmt.Errorf("attach build: resolved version ID is empty")
 		}
 
 		attachResult, attachErr := submitcli.EnsureBuildAttached(requestCtx, client, versionID, opts.BuildID, opts.DryRun)
@@ -533,13 +536,16 @@ func executeRun(ctx context.Context, opts runOptions) (runResult, error) {
 	}
 
 	if err := runStep(stepSubmitReview, "Check review submission prerequisites and rerun with --confirm.", func() (stepOutcome, error) {
-		if strings.TrimSpace(versionID) == "" && opts.DryRun {
-			return stepOutcome{
-				Status:  "dry-run",
-				Message: "submission deferred until version exists",
-				Details: map[string]any{"deferred": true},
-				Persist: false,
-			}, nil
+		if strings.TrimSpace(versionID) == "" {
+			if opts.DryRun {
+				return stepOutcome{
+					Status:  "dry-run",
+					Message: "submission deferred until version exists",
+					Details: map[string]any{"deferred": true},
+					Persist: false,
+				}, nil
+			}
+			return stepOutcome{}, fmt.Errorf("submit review: resolved version ID is empty")
 		}
 
 		submitResult, submitErr := submitcli.SubmitResolvedVersion(requestCtx, client, submitcli.SubmitResolvedVersionOptions{
@@ -550,6 +556,9 @@ func executeRun(ctx context.Context, opts runOptions) (runResult, error) {
 			EnsureBuildAttached:      false,
 			LookupExistingSubmission: true,
 			DryRun:                   opts.DryRun,
+			Emit: func(message string) {
+				fmt.Fprintln(os.Stderr, message)
+			},
 		})
 		if submitErr != nil {
 			return stepOutcome{Details: submitResult}, submitErr
