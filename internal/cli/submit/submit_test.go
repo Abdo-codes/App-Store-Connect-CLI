@@ -1510,6 +1510,40 @@ func TestPrintSubmissionErrorHintsUsesExistingRunnableCommands(t *testing.T) {
 	}
 }
 
+type silentSubmissionHintWrapper struct {
+	err error
+}
+
+func (w silentSubmissionHintWrapper) Error() string {
+	return "outer wrapper"
+}
+
+func (w silentSubmissionHintWrapper) Unwrap() error {
+	return w.err
+}
+
+func TestPrintSubmissionErrorHintsTraversesWrappedErrors(t *testing.T) {
+	wrapped := silentSubmissionHintWrapper{
+		err: silentSubmissionHintWrapper{
+			err: errors.New("ageRatingDeclaration appDataUsage"),
+		},
+	}
+
+	stderr := captureSubmitStderr(t, func() {
+		printSubmissionErrorHints(wrapped, "app-1")
+	})
+
+	for _, want := range []string{
+		"Hint: Review current age rating: asc age-rating view --app app-1",
+		"Hint: Review age-rating update flags: asc age-rating set --help",
+		"Hint: Complete App Privacy at: https://appstoreconnect.apple.com/apps/app-1/appPrivacy",
+	} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("expected wrapped-error hint %q in stderr, got %q", want, stderr)
+		}
+	}
+}
+
 func newSubmitTestClient(t *testing.T, transport http.RoundTripper) *asc.Client {
 	t.Helper()
 

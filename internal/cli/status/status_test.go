@@ -7,6 +7,52 @@ import (
 	"github.com/rudrankriyam/App-Store-Connect-CLI/internal/asc"
 )
 
+func TestBuildDashboardSnapshotKeyTreatsNilAndEmptySlicesEqually(t *testing.T) {
+	first := &dashboardResponse{
+		Summary: statusSummary{
+			Health:     "green",
+			NextAction: "No action needed.",
+			Blockers:   nil,
+		},
+		Submission: &submissionSection{
+			InFlight:       false,
+			BlockingIssues: nil,
+		},
+	}
+	second := &dashboardResponse{
+		Summary: statusSummary{
+			Health:     "green",
+			NextAction: "No action needed.",
+			Blockers:   []string{},
+		},
+		Submission: &submissionSection{
+			InFlight:       false,
+			BlockingIssues: []string{},
+		},
+	}
+
+	if firstKey, secondKey := buildDashboardSnapshotKey(first), buildDashboardSnapshotKey(second); firstKey != secondKey {
+		t.Fatalf("expected semantically identical snapshots to match, got %#v != %#v", firstKey, secondKey)
+	}
+}
+
+func TestBuildDashboardSnapshotKeyChangesWhenVisibleDataChanges(t *testing.T) {
+	first := &dashboardResponse{
+		Review: &reviewSection{
+			State: "WAITING_FOR_REVIEW",
+		},
+	}
+	second := &dashboardResponse{
+		Review: &reviewSection{
+			State: "IN_REVIEW",
+		},
+	}
+
+	if firstKey, secondKey := buildDashboardSnapshotKey(first), buildDashboardSnapshotKey(second); firstKey == secondKey {
+		t.Fatalf("expected differing visible review state to change snapshot key, got %#v", firstKey)
+	}
+}
+
 func TestParseInclude_DefaultsToAllSections(t *testing.T) {
 	includes, err := parseInclude("")
 	if err != nil {

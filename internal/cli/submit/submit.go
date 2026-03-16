@@ -977,25 +977,24 @@ func printSubmissionErrorHints(err error, appID string) {
 	if err == nil {
 		return
 	}
-	errMsg := err.Error()
 
 	var hints []string
-	if strings.Contains(errMsg, "ageRatingDeclaration") {
+	if errorChainContains(err, "ageRatingDeclaration") {
 		hints = append(hints,
 			fmt.Sprintf("Review current age rating: asc age-rating view --app %s", appID),
 			"Review age-rating update flags: asc age-rating set --help",
 		)
 	}
-	if strings.Contains(errMsg, "contentRightsDeclaration") {
+	if errorChainContains(err, "contentRightsDeclaration") {
 		hints = append(hints,
 			fmt.Sprintf("If your app does not use third-party content: asc apps update --id %s --content-rights DOES_NOT_USE_THIRD_PARTY_CONTENT", appID),
 			fmt.Sprintf("If your app uses third-party content: asc apps update --id %s --content-rights USES_THIRD_PARTY_CONTENT", appID),
 		)
 	}
-	if strings.Contains(errMsg, "appDataUsage") {
+	if errorChainContains(err, "appDataUsage") {
 		hints = append(hints, fmt.Sprintf("Complete App Privacy at: https://appstoreconnect.apple.com/apps/%s/appPrivacy", appID))
 	}
-	if strings.Contains(errMsg, "primaryCategory") {
+	if errorChainContains(err, "primaryCategory") {
 		hints = append(hints,
 			"List available categories: asc categories list",
 			"Review category update flags: asc app-setup categories set --help",
@@ -1008,6 +1007,15 @@ func printSubmissionErrorHints(err error, appID string) {
 			fmt.Fprintf(os.Stderr, "Hint: %s\n", hint)
 		}
 	}
+}
+
+func errorChainContains(err error, needle string) bool {
+	for current := err; current != nil; current = errors.Unwrap(current) {
+		if strings.Contains(current.Error(), needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func isExpectedNonCancellableReviewSubmissionError(err error) bool {
