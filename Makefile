@@ -20,6 +20,7 @@ GOLANGCI_LINT_VERSION ?= v1.64.8
 SRC_DIR := .
 BUILD_DIR := build
 DIST_DIR := dist
+RELEASE_DIR := release
 
 # Colors
 GREEN := \033[0;32m
@@ -44,15 +45,15 @@ $(BINARY_NAME): $(GOMOD)
 .PHONY: build-all
 build-all: clean
 	@echo "$(BLUE)Building for multiple platforms...$(NC)"
-	@mkdir -p release
+	@mkdir -p $(RELEASE_DIR)
 	@for target in "darwin amd64 macOS" "darwin arm64 macOS" "linux amd64 linux" "linux arm64 linux" "windows amd64 windows"; do \
 		set -- $$target; \
 		os="$$1"; arch="$$2"; label="$$3"; suffix=""; \
 		if [ "$$os" = "windows" ]; then suffix=".exe"; fi; \
 		echo "Building $$label/$$arch..."; \
-		GOOS="$$os" GOARCH="$$arch" $(GO) build -ldflags "$(LDFLAGS)" -o "release/$(BINARY_NAME)_$(VERSION)_$${label}_$${arch}$${suffix}" .; \
+		GOOS="$$os" GOARCH="$$arch" $(GO) build -ldflags "$(LDFLAGS)" -o "$(RELEASE_DIR)/$(BINARY_NAME)_$(VERSION)_$${label}_$${arch}$${suffix}" .; \
 	done
-	@echo "$(GREEN)✓ Release binaries written to release/$(NC)"
+	@echo "$(GREEN)✓ Release binaries written to $(RELEASE_DIR)/$(NC)"
 
 # Build with debug symbols
 .PHONY: build-debug
@@ -189,7 +190,7 @@ check-wall-of-apps:
 clean:
 	@echo "$(BLUE)Cleaning...$(NC)"
 	rm -f $(BINARY_NAME) $(BINARY_NAME)-debug
-	rm -rf $(BUILD_DIR) $(DIST_DIR)
+	rm -rf $(BUILD_DIR) $(DIST_DIR) $(RELEASE_DIR)
 	rm -f coverage.out coverage.html
 
 # Install the binary

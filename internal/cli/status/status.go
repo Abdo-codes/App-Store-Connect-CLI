@@ -612,12 +612,12 @@ func optionalRelationshipResourceID(relationships json.RawMessage, key string) (
 }
 
 func fillAppStoreAndPhasedRelease(ctx context.Context, client *asc.Client, appID string, includes includeSet, resp *dashboardResponse) error {
-	versions, err := client.GetAppStoreVersions(ctx, appID, asc.WithAppStoreVersionsLimit(200))
+	versions, err := fetchAllAppStoreVersions(ctx, client, appID, asc.WithAppStoreVersionsLimit(200))
 	if err != nil {
 		return err
 	}
 
-	latestVersion := selectLatestAppStoreVersion(versions.Data)
+	latestVersion := selectLatestAppStoreVersion(versions)
 	if includes.appstore {
 		section := &appStoreSection{}
 		if latestVersion != nil {
@@ -656,7 +656,7 @@ func fillAppStoreAndPhasedRelease(ctx context.Context, client *asc.Client, appID
 }
 
 func fillSubmissionAndReview(ctx context.Context, client *asc.Client, appID string, includes includeSet, resp *dashboardResponse) error {
-	submissions, err := client.GetReviewSubmissions(ctx, appID, asc.WithReviewSubmissionsLimit(200))
+	submissions, err := fetchAllReviewSubmissions(ctx, client, appID, asc.WithReviewSubmissionsLimit(200))
 	if err != nil {
 		return err
 	}
@@ -666,7 +666,7 @@ func fillSubmissionAndReview(ctx context.Context, client *asc.Client, appID stri
 			InFlight:       false,
 			BlockingIssues: []string{},
 		}
-		for _, submission := range submissions.Data {
+		for _, submission := range submissions {
 			state := string(submission.Attributes.SubmissionState)
 			if isInFlightSubmissionState(state) {
 				section.InFlight = true
@@ -681,7 +681,7 @@ func fillSubmissionAndReview(ctx context.Context, client *asc.Client, appID stri
 
 	if includes.review {
 		section := &reviewSection{}
-		latest := selectLatestReviewSubmission(submissions.Data)
+		latest := selectLatestReviewSubmission(submissions)
 		if latest != nil {
 			section.LatestSubmissionID = latest.ID
 			section.State = string(latest.Attributes.SubmissionState)
@@ -692,6 +692,60 @@ func fillSubmissionAndReview(ctx context.Context, client *asc.Client, appID stri
 	}
 
 	return nil
+}
+
+func fetchAllAppStoreVersions(ctx context.Context, client *asc.Client, appID string, opts ...asc.AppStoreVersionsOption) ([]asc.Resource[asc.AppStoreVersionAttributes], error) {
+	firstPage, err := client.GetAppStoreVersions(ctx, appID, opts...)
+	if err != nil {
+		return nil, err
+	}
+	if firstPage == nil {
+		return []asc.Resource[asc.AppStoreVersionAttributes]{}, nil
+	}
+
+	resp, err := asc.PaginateAll(ctx, firstPage, func(ctx context.Context, nextURL string) (asc.PaginatedResponse, error) {
+		return client.GetAppStoreVersions(ctx, appID, asc.WithAppStoreVersionsNextURL(nextURL))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	aggregated, ok := resp.(*asc.AppStoreVersionsResponse)
+	if !ok {
+		return nil, fmt.Errorf("unexpected app store versions pagination response type %T", resp)
+	}
+	if aggregated == nil || aggregated.Data == nil {
+		return []asc.Resource[asc.AppStoreVersionAttributes]{}, nil
+	}
+
+	return aggregated.Data, nil
+}
+
+func fetchAllReviewSubmissions(ctx context.Context, client *asc.Client, appID string, opts ...asc.ReviewSubmissionsOption) ([]asc.ReviewSubmissionResource, error) {
+	firstPage, err := client.GetReviewSubmissions(ctx, appID, opts...)
+	if err != nil {
+		return nil, err
+	}
+	if firstPage == nil {
+		return []asc.ReviewSubmissionResource{}, nil
+	}
+
+	resp, err := asc.PaginateAll(ctx, firstPage, func(ctx context.Context, nextURL string) (asc.PaginatedResponse, error) {
+		return client.GetReviewSubmissions(ctx, appID, asc.WithReviewSubmissionsNextURL(nextURL))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	aggregated, ok := resp.(*asc.ReviewSubmissionsResponse)
+	if !ok {
+		return nil, fmt.Errorf("unexpected review submissions pagination response type %T", resp)
+	}
+	if aggregated == nil || aggregated.Data == nil {
+		return []asc.ReviewSubmissionResource{}, nil
+	}
+
+	return aggregated.Data, nil
 }
 
 func selectLatestAppStoreVersion(versions []asc.Resource[asc.AppStoreVersionAttributes]) *asc.Resource[asc.AppStoreVersionAttributes] {

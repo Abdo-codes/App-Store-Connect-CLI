@@ -108,6 +108,16 @@
     "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/2b/cf/8b/2bcf8b94-8050-926d-bce1-b95266a061d0/AppIcon-0-0-1x_U007ephone-0-1-85-220.png/512x512bb.jpg"
   },
   {
+    "app": "CUStats",
+    "link": "https://apps.apple.com/us/app/custats/id6756333957?mt=12&uo=4",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/2f/71/e8/2f71e8b6-40ff-cd21-cd48-0161abdff235/AppIcon-0-0-85-220-0-5-0-2x.png/512x512bb.png"
+  },
+  {
+    "app": "CUStats Go",
+    "link": "https://apps.apple.com/us/app/custats-go/id6757679404?uo=4",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/5d/65/7f/5d657f01-3cf3-2d0b-c343-45112c16a295/AppIcon-0-0-1x_U007emarketing-0-11-0-85-220.png/512x512bb.jpg"
+  },
+  {
     "app": "Dandelion",
     "link": "https://apps.apple.com/us/app/dandelion-write-and-let-go/id6757363901",
     "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/e1/e4/e3/e1e4e3af-42bc-bbb0-cd4d-3876d720de3e/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/512x512bb.jpg"
@@ -146,6 +156,11 @@
     "app": "EduSwipe: AI Flashcards & SRS",
     "link": "https://apps.apple.com/us/app/eduswipe-ai-flashcards-srs/id6744727106?uo=4",
     "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/23/60/71/236071d7-7827-efd9-4c8f-03db0cee6aa9/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg"
+  },
+  {
+    "app": "FaceScreen - Desktop Camera",
+    "link": "https://apps.apple.com/us/app/facescreen-desktop-camera/id6702028512?mt=12&uo=4",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/79/71/89/797189ca-6bde-e2e0-9e24-99bd6593b928/AppIcon-0-0-85-220-0-5-0-2x-P3-0-0-0.png/512x512bb.png"
   },
   {
     "app": "Fermento Fermentation Journal",
@@ -212,6 +227,11 @@
     "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/11/49/d6/1149d644-0ac6-6277-9847-c9ac124510a8/AppIcon-0-1x_U007ephone-0-1-85-220-0.jpeg/512x512bb.jpg"
   },
   {
+    "app": "Gradient Match Game: Descent",
+    "link": "https://apps.apple.com/us/app/gradient-match-game-descent/id1479784361?uo=4",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/e8/a4/81/e8a4813c-4d02-65b3-442a-3703431813d7/AppIcon-1x_U007epad-0-1-85-220-0.png/512x512bb.jpg"
+  },
+  {
     "app": "GrowPal: Health & Fitness",
     "link": "https://apps.apple.com/us/app/growpal-health-fitness/id1560604814?uo=4",
     "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/0c/be/8b/0cbe8bfa-a36d-7ebb-6580-959481f43294/Grow-0-0-1x_U007ephone-0-0-0-1-0-0-sRGB-85-220.png/512x512bb.jpg"
@@ -227,14 +247,29 @@
     "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/7b/43/73/7b4373fc-26e2-030b-7162-2f0ab0a7681d/AppIcon-0-0-1x_U007ewatch-0-1-P3-85-220.png/512x512bb.jpg"
   },
   {
+    "app": "Impulses: Stop Impulse Buying",
+    "link": "https://apps.apple.com/us/app/impulses-stop-impulse-buying/id6754372500?uo=4",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/8a/05/57/8a055708-4850-8120-8070-91424269b2f7/AppIcon-0-1x_U007ephone-0-1-85-220-0.png/512x512bb.jpg"
+  },
+  {
     "app": "Inkput",
     "link": "https://apps.apple.com/app/id6758570182",
     "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/83/e2/68/83e26872-d3d5-ab92-7164-673371673443/AppIcon-0-1x_U007epad-0-1-85-220-0.png/512x512bb.jpg"
   },
   {
+    "app": "Jinshu Reader",
+    "link": "https://apps.apple.com/us/app/jinshu-reader/id6759705710?uo=4",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/6c/ce/46/6cce46eb-8613-c97d-8913-6888c3d4f1d2/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg"
+  },
+  {
     "app": "KeepCount: Tally Counter",
     "link": "https://apps.apple.com/us/app/keepcount-tally-counter/id6758891370",
     "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/ee/f4/e6/eef4e6d4-c2af-3856-6cdf-80af085b1cb9/AppIcon-0-1x_U007epad-0-1-85-220-0.png/512x512bb.jpg"
+  },
+  {
+    "app": "KeyScreen - Display Keystrokes",
+    "link": "https://apps.apple.com/us/app/keyscreen-display-keystrokes/id6753302381?mt=12&uo=4",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c8/38/fd/c838fddf-a2db-5007-12be-8cb9906926e1/AppIcon-0-0-85-220-0-5-0-2x-P3-0-0-0.png/512x512bb.png"
   },
   {
     "app": "Klick: keyboard sounds",
@@ -411,9 +446,19 @@
     "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/ff/41/f6/ff41f60e-7df4-563f-3872-9cb6490e786f/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-P3-85-220.png/512x512bb.jpg"
   },
   {
+    "app": "Presentify - Screen Annotation",
+    "link": "https://apps.apple.com/us/app/presentify-screen-annotation/id1507246666?mt=12&uo=4",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/4b/38/19/4b3819d1-89fa-48bc-1ef6-835d0930d82e/AppIcon-0-0-85-220-0-0-5-0-2x-sRGB-0-0-0.png/512x512bb.png"
+  },
+  {
     "app": "Prickly Pear: Brain & Hormones",
     "link": "https://apps.apple.com/app/id6654889896",
     "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/7a/04/14/7a04148e-e548-f6bf-8c0e-c26b9157a7cb/AppIcon-0-1x_U007ephone-0-1-85-220-0.png/512x512bb.jpg"
+  },
+  {
+    "app": "PrivaNota: Private AI Notes",
+    "link": "https://apps.apple.com/us/app/privanota-private-ai-notes/id6752555660",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/7f/e6/22/7fe622bc-1260-bcfd-a8e2-c179ba33e727/PrivaNota-0.6-0-0-1x_U007epad-0-1-sRGB-85-220.png/512x512bb.jpg"
   },
   {
     "app": "Progressio: Habit Tracker",
