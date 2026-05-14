@@ -3,14 +3,14 @@ package cmdtest
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"flag"
 	"io"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	rootcmd "github.com/rudrankriyam/App-Store-Connect-CLI/cmd"
 )
 
 func TestBackgroundAssetsSubmitValidationErrors(t *testing.T) {
@@ -60,16 +60,9 @@ func TestBackgroundAssetsSubmitValidationErrors(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			root := RootCommand("1.2.3")
-			root.FlagSet.SetOutput(io.Discard)
-
 			stdout, stderr := captureOutput(t, func() {
-				if err := root.Parse(test.args); err != nil {
-					t.Fatalf("parse error: %v", err)
-				}
-				err := root.Run(context.Background())
-				if !errors.Is(err, flag.ErrHelp) {
-					t.Fatalf("expected ErrHelp, got %v", err)
+				if code := rootcmd.Run(test.args, "1.2.3"); code != rootcmd.ExitUsage {
+					t.Fatalf("expected exit code %d, got %d", rootcmd.ExitUsage, code)
 				}
 			})
 
@@ -465,6 +458,17 @@ func TestBackgroundAssetsSubmitFlagOrderEdgeCases(t *testing.T) {
 		args []string
 	}{
 		{
+			name: "global flag before subcommands",
+			args: []string{
+				"--profile", "review-edge",
+				"background-assets", "submit",
+				"--app", "123456789",
+				"--version-id", "v-before",
+				"--dry-run",
+				"--output", "json",
+			},
+		},
+		{
 			name: "all flags before subcommand-style positionals",
 			args: []string{
 				"background-assets", "submit",
@@ -506,16 +510,22 @@ func TestBackgroundAssetsSubmitFlagOrderEdgeCases(t *testing.T) {
 				if err := root.Parse(c.args); err != nil {
 					t.Fatalf("parse error: %v", err)
 				}
-				err := root.Run(context.Background())
-				if err != nil && !errors.Is(err, flag.ErrHelp) {
+				if err := root.Run(context.Background()); err != nil {
 					t.Fatalf("unexpected run error: %v", err)
 				}
 			})
 
-			if !strings.Contains(stdout, `"dryRun": true`) && !strings.Contains(stdout, `"dryRun":true`) {
-				if stderr == "" {
-					t.Fatalf("expected dry-run JSON on stdout or a recognizable validation error on stderr; got stdout=%q stderr=%q", stdout, stderr)
-				}
+			if stderr != "" {
+				t.Fatalf("expected empty stderr, got %q", stderr)
+			}
+			var out struct {
+				DryRun bool `json:"dryRun"`
+			}
+			if err := json.Unmarshal([]byte(stdout), &out); err != nil {
+				t.Fatalf("expected valid dry-run JSON on stdout, got %q (err=%v)", stdout, err)
+			}
+			if !out.DryRun {
+				t.Fatalf("expected dryRun=true in stdout JSON, got %q", stdout)
 			}
 		})
 	}

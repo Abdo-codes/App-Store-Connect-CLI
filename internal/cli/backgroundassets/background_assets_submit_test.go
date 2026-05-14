@@ -2,75 +2,11 @@ package backgroundassets
 
 import (
 	"context"
-	"errors"
-	"flag"
 	"strings"
 	"testing"
 
 	"github.com/rudrankriyam/App-Store-Connect-CLI/internal/asc"
 )
-
-func TestBackgroundAssetsSubmitCommand_MissingApp(t *testing.T) {
-	t.Setenv("ASC_APP_ID", "")
-
-	cmd := BackgroundAssetsSubmitCommand()
-	if err := cmd.FlagSet.Parse([]string{"--all", "--confirm"}); err != nil {
-		t.Fatalf("failed to parse flags: %v", err)
-	}
-
-	if err := cmd.Exec(context.Background(), []string{}); !errors.Is(err, flag.ErrHelp) {
-		t.Fatalf("expected flag.ErrHelp when --app is missing, got %v", err)
-	}
-}
-
-func TestBackgroundAssetsSubmitCommand_RequiresSelection(t *testing.T) {
-	cmd := BackgroundAssetsSubmitCommand()
-	if err := cmd.FlagSet.Parse([]string{"--app", "APP_ID", "--confirm"}); err != nil {
-		t.Fatalf("failed to parse flags: %v", err)
-	}
-
-	if err := cmd.Exec(context.Background(), []string{}); !errors.Is(err, flag.ErrHelp) {
-		t.Fatalf("expected flag.ErrHelp when no selection flag is provided, got %v", err)
-	}
-}
-
-func TestBackgroundAssetsSubmitCommand_MutuallyExclusiveSelection(t *testing.T) {
-	cmd := BackgroundAssetsSubmitCommand()
-	if err := cmd.FlagSet.Parse([]string{
-		"--app", "APP_ID",
-		"--all",
-		"--asset-pack-identifier", "stamps.us",
-		"--confirm",
-	}); err != nil {
-		t.Fatalf("failed to parse flags: %v", err)
-	}
-
-	if err := cmd.Exec(context.Background(), []string{}); !errors.Is(err, flag.ErrHelp) {
-		t.Fatalf("expected flag.ErrHelp for mutually-exclusive selection, got %v", err)
-	}
-}
-
-func TestBackgroundAssetsSubmitCommand_RequiresConfirmOrDryRun(t *testing.T) {
-	cmd := BackgroundAssetsSubmitCommand()
-	if err := cmd.FlagSet.Parse([]string{"--app", "APP_ID", "--all"}); err != nil {
-		t.Fatalf("failed to parse flags: %v", err)
-	}
-
-	if err := cmd.Exec(context.Background(), []string{}); !errors.Is(err, flag.ErrHelp) {
-		t.Fatalf("expected flag.ErrHelp without --confirm or --dry-run, got %v", err)
-	}
-}
-
-func TestBackgroundAssetsSubmitCommand_DryRunAndNoSubmitMutuallyExclusive(t *testing.T) {
-	cmd := BackgroundAssetsSubmitCommand()
-	if err := cmd.FlagSet.Parse([]string{"--app", "APP_ID", "--all", "--dry-run", "--no-submit"}); err != nil {
-		t.Fatalf("failed to parse flags: %v", err)
-	}
-
-	if err := cmd.Exec(context.Background(), []string{}); !errors.Is(err, flag.ErrHelp) {
-		t.Fatalf("expected flag.ErrHelp for --dry-run + --no-submit, got %v", err)
-	}
-}
 
 type fakeSubmitClient struct {
 	assets             []ascBackgroundAssetItem
