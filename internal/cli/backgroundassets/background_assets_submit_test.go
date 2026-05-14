@@ -246,6 +246,13 @@ func TestFetchAlreadyAttachedBackgroundAssetVersions(t *testing.T) {
 				},
 			},
 			{
+				ID:         "item-removed",
+				Attributes: asc.ReviewSubmissionItemAttributes{State: "REMOVED"},
+				Relationships: &asc.ReviewSubmissionItemRelationships{
+					BackgroundAssetVersion: &asc.Relationship{Data: asc.ResourceData{Type: asc.ResourceTypeBackgroundAssetVersions, ID: "ver-removed"}},
+				},
+			},
+			{
 				ID: "item-app-version",
 				Relationships: &asc.ReviewSubmissionItemRelationships{
 					AppStoreVersion: &asc.Relationship{Data: asc.ResourceData{Type: asc.ResourceTypeAppStoreVersions, ID: "asv-1"}},
@@ -265,6 +272,9 @@ func TestFetchAlreadyAttachedBackgroundAssetVersions(t *testing.T) {
 	}
 	if _, ok := attached["ver-b"]; !ok {
 		t.Errorf("missing ver-b")
+	}
+	if _, ok := attached["ver-removed"]; ok {
+		t.Errorf("expected REMOVED item ver-removed to be excluded")
 	}
 }
 
