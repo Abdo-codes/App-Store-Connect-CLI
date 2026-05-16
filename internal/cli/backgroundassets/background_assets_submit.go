@@ -22,7 +22,7 @@ func BackgroundAssetsSubmitCommand() *ffcli.Command {
 
 	appID := fs.String("app", "", "App Store Connect app ID (or ASC_APP_ID)")
 	platform := fs.String("platform", "IOS", "Platform: IOS, MAC_OS, TV_OS, VISION_OS")
-	all := fs.Bool("all", false, "Submit the latest COMPLETE version of every non-archived asset pack for the app")
+	all := fs.Bool("all", false, "Submit the latest COMPLETE version of every non-archived background asset for the app")
 	assetPackIdentifiers := fs.String("asset-pack-identifier", "", "Comma-separated asset pack identifiers to submit")
 	backgroundAssetIDs := fs.String("background-asset-id", "", "Comma-separated background asset IDs to submit")
 	versionIDs := fs.String("version-id", "", "Comma-separated background asset version IDs to submit (skips lookup)")
@@ -34,26 +34,26 @@ func BackgroundAssetsSubmitCommand() *ffcli.Command {
 
 	return &ffcli.Command{
 		Name:       "submit",
-		ShortUsage: "asc background-assets submit --app \"APP_ID\" --all --confirm",
-		ShortHelp:  "Submit background asset packs for App Store review.",
-		LongHelp: `Submit background asset packs for App Store review.
+		ShortUsage: "asc background-assets submit --app \"APP_ID\" --background-asset-id \"ASSET_ID\" --confirm",
+		ShortHelp:  "Submit background asset versions for App Store review.",
+		LongHelp: `Submit one or more background asset versions for App Store review.
 
 This is a wrapper around the generic review submission flow:
   - asc review submissions-create
   - asc review items-add (for each background asset version)
   - asc review submissions-submit
 
-Pack selection is mutually exclusive: --all, --asset-pack-identifier,
+Selection is mutually exclusive: --all, --asset-pack-identifier,
 --background-asset-id, or --version-id.
 
 For --all, --asset-pack-identifier, and --background-asset-id the newest
-version in state COMPLETE is selected per pack; an error is returned if a
-pack has no COMPLETE version.
+version in state COMPLETE is selected per background asset; an error is
+returned if a selected background asset has no COMPLETE version.
 
 Examples:
-  asc background-assets submit --app "APP_ID" --all --confirm
-  asc background-assets submit --app "APP_ID" --asset-pack-identifier "com.example.stamps.us,com.example.stamps.de" --confirm
-  asc background-assets submit --app "APP_ID" --version-id "VID_A,VID_B" --review-submission-id "SUB" --confirm
+  asc background-assets submit --app "APP_ID" --background-asset-id "ASSET_ID" --confirm
+  asc background-assets submit --app "APP_ID" --asset-pack-identifier "com.example.assetpack" --confirm
+  asc background-assets submit --app "APP_ID" --version-id "VERSION_ID" --review-submission-id "SUBMISSION_ID" --confirm
   asc background-assets submit --app "APP_ID" --all --dry-run`,
 		FlagSet:   fs,
 		UsageFunc: shared.DefaultUsageFunc,
@@ -247,11 +247,16 @@ type backgroundAssetSubmitResolver struct {
 func resolveBackgroundAssetSubmitItems(ctx context.Context, r backgroundAssetSubmitResolver, sel backgroundAssetSubmitSelection) ([]backgroundAssetsSubmitResultItem, error) {
 	if len(sel.explicitVersionIDs) > 0 {
 		items := make([]backgroundAssetsSubmitResultItem, 0, len(sel.explicitVersionIDs))
+		seen := make(map[string]struct{}, len(sel.explicitVersionIDs))
 		for _, vid := range sel.explicitVersionIDs {
 			vid = strings.TrimSpace(vid)
 			if vid == "" {
 				continue
 			}
+			if _, ok := seen[vid]; ok {
+				continue
+			}
+			seen[vid] = struct{}{}
 			items = append(items, backgroundAssetsSubmitResultItem{BackgroundAssetVersionID: vid})
 		}
 		return items, nil

@@ -97,7 +97,7 @@ func TestBackgroundAssetsSubmitDryRunWithExplicitVersionIDsDoesNotCallNetwork(t 
 	args := []string{
 		"background-assets", "submit",
 		"--app", "123456789",
-		"--version-id", "ver-a, ver-b",
+		"--version-id", "ver-a, ver-a, ver-b",
 		"--dry-run",
 		"--output", "json",
 	}

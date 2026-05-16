@@ -146,13 +146,13 @@ func TestResolveBackgroundAssetSubmitItems_ExplicitVersionIDs(t *testing.T) {
 	client := newFakeSubmitClient()
 	items, err := resolveBackgroundAssetSubmitItems(context.Background(), backgroundAssetSubmitResolver{client: client}, backgroundAssetSubmitSelection{
 		appID:              "APP",
-		explicitVersionIDs: []string{"vid-1", " vid-2 ", ""},
+		explicitVersionIDs: []string{"vid-1", " vid-2 ", "", "vid-1"},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(items) != 2 {
-		t.Fatalf("expected 2 items after trimming blanks, got %d", len(items))
+		t.Fatalf("expected 2 items after trimming blanks and duplicates, got %d", len(items))
 	}
 	if items[0].BackgroundAssetVersionID != "vid-1" || items[1].BackgroundAssetVersionID != "vid-2" {
 		t.Errorf("unexpected resolved version IDs: %+v", items)

@@ -32,7 +32,7 @@ Examples:
   asc background-assets versions list --background-asset-id "ASSET_ID"
   asc background-assets app-store-releases get --id "RELEASE_ID"
   asc background-assets upload-files create --version-id "VERSION_ID" --file "./asset.zip" --asset-type ASSET
-  asc background-assets submit --app "APP_ID" --all --confirm`,
+  asc background-assets submit --app "APP_ID" --background-asset-id "ASSET_ID" --confirm`,
 		FlagSet:   fs,
 		UsageFunc: shared.DefaultUsageFunc,
 		Subcommands: []*ffcli.Command{
